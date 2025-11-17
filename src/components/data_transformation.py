@@ -12,10 +12,11 @@ from src.logger import logging
 from sklearn.impute import SimpleImputer
 from sklearn.compose import ColumnTransformer
 from src.utils import save_object
+from imblearn.pipeline import Pipeline as ImbPipeline
 
 @dataclass
 class DataTransformationConfig: # it will give me any path/inputs for my data transformation i am gonna use
-    preprocessor_obj_file_path = os.path.join('artifacts','preprocessor.pkl')
+    preprocessor_obj_file_path = os.path.join('artifacts','preprocessor.pkl') # that 's the file that we will create
     
 class DataTransformation:
     def __init__(self):
@@ -68,18 +69,27 @@ class DataTransformation:
             
             logging.info("Categorical columns encoding completed")
             
+                
             logging.info(f"Categorical columns: {categorical_columns}")
             logging.info(f"Numerical columns: {numerical_columns}")
             
             preprocessor = ColumnTransformer(transformers=
                 [
                     ("categorical",cat_pipeline,categorical_columns),
-                    ("numerical", num_pipeline, numerical_columns), 
+                    ("numerical", num_pipeline, numerical_columns)
+                ]
+            )
+            
+            # We use ImbPipeline since this 
+            full_pipeline = ImbPipeline( 
+                steps = [
+                    ('preprocessor',preprocessor),
+                    ('smote', SMOTE(random_state=0))  # with smote we handle the imbalanced data
                 ]
             )
 
             # We want to return the preprocess from the last above lines
-            return preprocessor
+            return full_pipeline
         
         except Exception as e:
             raise CustomException(e,sys)
@@ -102,23 +112,25 @@ class DataTransformation:
             input_feature_train_df = train_df.drop(columns = [target_column],axis =1)
             target_feature_train_df = train_df[target_column]
             
-            """ Define the exact test data. In the test data we don 't 
-                have the target column that's why we don 't define the test data."""
-            input_feature_test_df = test_df
+            # Define the exact test data
+            input_feature_test_df = test_df.drop(columns=[target_column],axis=1)
+            target_feature_test_df=test_df[target_column]
             
             logging.info("Apllying the preprocessing object on training and testing dataframe")
             
-            input_feature_train_arr = preprocessor_obj.fit_transform(input_feature_train_df)
-            input_feature_test_arr = preprocessor_obj.transform(input_feature_test_df)
+            X_train_resampled, y_train_resampled = preprocessor_obj.fit_resample(input_feature_train_df, target_feature_train_df)
+            X_test_preprocessed = preprocessor_obj.named_steps["preprocessor"].transform(input_feature_test_df)
 
             
-            # This function c_ is used to concatenate input train array and input train_df
+            # This function c_ is used to concatenate input feature (train array) and target (input train_df)
             train_arr = np.c_[
-                input_feature_train_arr,np.array(target_feature_train_df)
+                X_train_resampled,np.array(y_train_resampled)
             ]
             
             # The input feature test arr to is already array
-            test_arr = input_feature_test_arr
+            test_arr = np.c_[
+                X_test_preprocessed,np.array(target_feature_test_df)
+            ]
             
             # Save the preprocessor object (pickle) using the custom save_object from utils
             save_object( 

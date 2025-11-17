@@ -6,7 +6,7 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from dataclasses import dataclass
 from src.components.data_transformation import DataTransformation
-from src.components.data_transformation import DataTransformationConfig
+from src.components.model_trainer import ModelTrainer
 
 @dataclass
 class DataIngestionConfig: # for this we could create a separate folder where i could determine where to save all of these
@@ -21,21 +21,20 @@ class DataIngestion:
     def initiate_data_ingestion(self): # on this function is the first stage where we start pull the data practically
         logging.info("Entered the data ingestion method or component")
         try:
-            df1 = pd.read_csv('Datasets/train.csv') # here we could start read our data either from mongodb etc (now just from csv file)
-            df2 = pd.read_csv('Datasets/test.csv')
+            df = pd.read_csv('Datasets/train.csv') # here we could start read our data either from mongodb etc (now just from csv file)
+
             logging.info('Read the datasets as dataframe')
             os.makedirs(os.path.dirname(self.ingestion_config.train_data_path),exist_ok=True) # make directory where the train data will saved 
-            df1.to_csv(self.ingestion_config.train_data_path)
-            df2.to_csv(self.ingestion_config.test_data_path)
+            df.to_csv(self.ingestion_config.raw_data_path,index=False,header=True)
             
-            logging.info('Train test & test initiated')
-            train_set = df1
-            test_set = df2
-            
-            train_set.to_csv(self.ingestion_config.test_data_path,index=False, header=True)
+            logging.info("Train test split initiated")
+            train_set,test_set=train_test_split(df,test_size=0.2,random_state=42)
+
+            train_set.to_csv(self.ingestion_config.train_data_path,index=False,header=True)
+
             test_set.to_csv(self.ingestion_config.test_data_path,index=False,header=True)
-            
-            logging.info('Ingestion of the data is completed')
+
+            logging.info("Ingestion of the data is completed")
             
             return(
                 self.ingestion_config.train_data_path,
@@ -50,4 +49,7 @@ if __name__ == '__main__':
     train_data, test_data =obj.initiate_data_ingestion()
     
     data_transformation = DataTransformation()
-    data_transformation.initiate_data_transformation(train_data,test_data)
+    train_arr, test_arr, _ = data_transformation.initiate_data_transformation(train_data,test_data)
+    
+    model_trainer = ModelTrainer()
+    model_trainer.initiate_model_trainer(train_arr,test_arr)
