@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Model Dashboard — Introvert vs Extrovert</title>
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+      body { background: #f7f9fc; }
+      .card { box-shadow: 0 6px 18px rgba(0,0,0,0.06); }
+      .metric { font-weight: 700; font-size: 1.25rem; }
+      pre.json { max-height: 240px; overflow:auto; background:#0f1724; color:#cbd5e1; padding:12px; border-radius:6px }
+    </style>
+  </head>
+
+  <body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+      <div class="container-fluid">
+        <a class="navbar-brand" href="#">Introvert vs Extrovert — Model Dashboard</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="nav">
+          <ul class="navbar-nav ms-auto">
+            <li class="nav-item"><a class="nav-link" href="#overview">Overview</a></li>
+            <li class="nav-item"><a class="nav-link" href="#metrics">Metrics</a></li>
+            <li class="nav-item"><a class="nav-link" href="#charts">Charts</a></li>
+            <li class="nav-item"><a class="nav-link" href="#predict">Predict</a></li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+
+    <main class="container py-4">
+
+      <!-- Overview -->
+      <section id="overview" class="mb-4">
+        <div class="row g-3">
+          <div class="col-md-8">
+            <div class="card p-3">
+              <h5>Project summary</h5>
+              <p class="mb-1">This dashboard is a single-file static HTML template for presenting classification results for the <strong>Introvert vs Extrovert</strong> problem. It includes space for model comparisons, metrics, ROC/PR charts, confusion matrices and a simple front-end predict form (requires a backend endpoint to function).</p>
+              <ul>
+                <li>Drop-in JSON for metrics, confusion matrices and ROC data.</li>
+                <li>Interactive charts (Chart.js).</li>
+                <li>Predict form that posts JSON to <code>/predict</code> (change to your API).</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="col-md-4">
+            <div class="card p-3">
+              <h6>Instructions</h6>
+              <ol>
+                <li>Replace placeholder JSON in the <em>Metrics</em> panel or call <code>loadReport(url)</code>.</li>
+                <li>Provide model artefacts/plots as static images or URLs.</li>
+                <li>Wire the predict form to your inference endpoint (POST /predict).</li>
+              </ol>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Metrics & Models -->
+      <section id="metrics" class="mb-4">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <div class="card p-3">
+              <h6>Model metrics (JSON)</h6>
+              <pre id="metricsJson" class="json">{
+  "RandomForest": {
+    "accuracy": 0.92,
+    "auc": 0.95,
+    "precision": 0.91,
+    "recall": 0.90
+  },
+  "XGBoost": {
+    "accuracy": 0.90,
+    "auc": 0.93,
+    "precision": 0.89,
+    "recall": 0.88
+  }
+}</pre>
+              <div class="mt-2">
+                <button class="btn btn-sm btn-outline-primary me-2" onclick="renderMetrics()">Render metrics table</button>
+                <button class="btn btn-sm btn-outline-secondary" onclick="downloadJSON()">Download JSON</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-6">
+            <div class="card p-3">
+              <h6>Models comparison</h6>
+              <div id="metricsTableWrap"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Charts -->
+      <section id="charts" class="mb-4">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <div class="card p-3">
+              <h6>ROC Curves</h6>
+              <canvas id="rocChart" height="220"></canvas>
+            </div>
+          </div>
+
+          <div class="col-md-6">
+            <div class="card p-3">
+              <h6>Confusion Matrix (selected model)</h6>
+              <canvas id="cmChart" height="220"></canvas>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Predict form -->
+      <section id="predict" class="mb-4">
+        <div class="card p-3">
+          <h6>Predict (example)</h6>
+          <p class="small text-muted">This form posts JSON to your inference API. Replace <code>/predict</code> with your real endpoint.</p>
+
+          <form id="predictForm" onsubmit="return doPredict(event)">
+            <div class="row g-2">
+              <!-- Put feature inputs here; change names to match your model -->
+              <div class="col-md-2"><input class="form-control" name="Time_spent_Alone" placeholder="Time_spent_Alone" required></div>
+              <div class="col-md-2"><input class="form-control" name="Social_event_attendance" placeholder="Social_event_attendance" required></div>
+              <div class="col-md-2"><input class="form-control" name="Going_outside" placeholder="Going_outside" required></div>
+              <div class="col-md-2"><input class="form-control" name="Friends_circle_size" placeholder="Friends_circle_size" required></div>
+              <div class="col-md-2"><input class="form-control" name="Post_frequency" placeholder="Post_frequency" required></div>
+              <div class="col-md-2"><select class="form-select" name="Stage_fear"><option value="low">low</option><option value="mid">mid</option><option value="high">high</option></select></div>
+
+              <div class="col-12 mt-2">
+                <button class="btn btn-primary" type="submit">Predict</button>
+                <span id="predictResult" class="ms-3"></span>
+              </div>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <footer class="text-center text-muted small mt-4">Built for demonstration — edit the HTML to match your project.</footer>
+    </main>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+      // --- Utility: parse JSON block ---
+      function getMetricsJson(){
+        try{ return JSON.parse(document.getElementById('metricsJson').innerText); }
+        catch(e){ console.error('Invalid JSON in metrics block', e); return {}; }
+      }
+
+      // --- Render table ---
+      function renderMetrics(){
+        const metrics = getMetricsJson();
+        const wrap = document.getElementById('metricsTableWrap');
+        let html = '<table class="table table-sm"><thead><tr><th>Model</th><th>Accuracy</th><th>AUC</th><th>Precision</th><th>Recall</th></tr></thead><tbody>';
+        for(const k of Object.keys(metrics)){
+          const v = metrics[k];
+          html += `<tr><td>${k}</td><td>${(v.accuracy||v.acc||'-')}</td><td>${(v.auc||'-')}</td><td>${(v.precision||'-')}</td><td>${(v.recall||'-')}</td></tr>`;
+        }
+        html += '</tbody></table>';
+        wrap.innerHTML = html;
+        renderROC();
+      }
+
+      // --- Simple ROC renderer (expects arrays under metrics.ROCd)'s placeholders ---
+      function renderROC(){
+        const metrics = getMetricsJson();
+        // Example structure: metrics['RandomForest'].roc = { fpr: [...], tpr: [...] }
+        const ctx = document.getElementById('rocChart').getContext('2d');
+        if(window.rocChart) window.rocChart.destroy();
+        const datasets = [];
+        for(const k of Object.keys(metrics)){
+          const m = metrics[k];
+          if(m.roc && m.roc.fpr && m.roc.tpr){
+            datasets.push({ label: k + ' (AUC=' + (m.auc||'') + ')', data: m.roc.fpr.map((x,i)=>({x:x,y:m.roc.tpr[i]})), showLine:true, fill:false });
+          }
+        }
+        window.rocChart = new Chart(ctx, { type:'scatter', data:{ datasets }, options:{ scales:{ x:{ title:{display:true, text:'FPR'}}, y:{ title:{display:true, text:'TPR'}, min:0, max:1 } } } });
+      }
+
+      // --- Confusion matrix renderer (expects confusion matrix in metrics[model].cm) ---
+      function renderConfusionMatrix(modelName){
+        const metrics = getMetricsJson();
+        const ctx = document.getElementById('cmChart').getContext('2d');
+        if(window.cmChart) window.cmChart.destroy();
+        const cm = metrics[modelName] && metrics[modelName].cm ? metrics[modelName].cm : [[0,0],[0,0]];
+        const data = { labels:['Neg','Pos'], datasets:[{ label:'Predictions', data:[cm[0][0], cm[0][1], cm[1][0], cm[1][1]] }] };
+        // simple bar chart as placeholder for heatmap
+        window.cmChart = new Chart(ctx, { type:'bar', data:{ labels:['TN','FP','FN','TP'], datasets:[{ label:modelName, data:[cm[0][0], cm[0][1], cm[1][0], cm[1][1]] }] }, options:{ indexAxis:'y' } });
+      }
+
+      // --- Download JSON ---
+      function downloadJSON(){
+        const data = document.getElementById('metricsJson').innerText;
+        const blob = new Blob([data], {type:'application/json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = 'metrics.json'; a.click();
+        URL.revokeObjectURL(url);
+      }
+
+      // --- Predict form POST (example) ---
+      async function doPredict(e){
+        e.preventDefault();
+        const form = e.target;
+        const fd = new FormData(form);
+        const obj = {};
+        for(const [k,v] of fd.entries()) obj[k]= isNaN(v) ? v : Number(v);
+        document.getElementById('predictResult').innerText = 'Sending...';
+        try{
+          const res = await fetch('/predict', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(obj) });
+          const j = await res.json();
+          document.getElementById('predictResult').innerText = 'Prediction: ' + JSON.stringify(j);
+        }catch(err){
+          document.getElementById('predictResult').innerText = 'Error calling /predict (this is a placeholder).';
+        }
+        return false;
+      }
+
+      // --- Load initial render ---
+      document.addEventListener('DOMContentLoaded', ()=>{ renderMetrics(); renderConfusionMatrix(Object.keys(getMetricsJson())[0] || 'RandomForest'); });
+
+      // --- Helper to load JSON from URL and update the block ---
+      async function loadReport(url){
+        try{
+          const r = await fetch(url); const j = await r.json(); document.getElementById('metricsJson').innerText = JSON.stringify(j,null,2); renderMetrics();
+        }catch(e){ console.error(e); alert('Failed to load report'); }
+      }
+    </script>
+  </body>
+</html>

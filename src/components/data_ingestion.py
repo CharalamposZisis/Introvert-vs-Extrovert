@@ -7,6 +7,15 @@ from sklearn.model_selection import train_test_split
 from dataclasses import dataclass
 from src.components.data_transformation import DataTransformation
 from src.components.model_trainer import ModelTrainer
+import sagemaker
+import boto3
+
+sm_boto3 = boto3.client("Sage_maker")
+sess = sagemaker.Session()
+region = sess.boto_session.region_name
+bucket = 'mlbucker1'
+print("Using bucker",bucket)
+
 
 @dataclass
 class DataIngestionConfig: # for this we could create a separate folder where i could determine where to save all of these

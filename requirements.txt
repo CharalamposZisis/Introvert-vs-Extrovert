@@ -7,4 +7,6 @@ imblearn
 dill
 xgboost
 shap
+flask
+sagemaker
 -e .
