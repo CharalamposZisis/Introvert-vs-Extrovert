@@ -35,7 +35,7 @@ class ModelTrainer:
                 train_array[:,:-1], # take every data without last column (X_train)
                 train_array[:,-1], # take all the data from the last column (y_train)
                 test_array[:,:-1], # take every data without last column (X_test)
-                train_array[:,-1] # take all the data from the last column (y_test)
+                test_array[:,-1] # take all the data from the last column (y_test)
             )
             
         # Models i 'll use to classify the data
@@ -85,7 +85,7 @@ class ModelTrainer:
             },
 
             # Xgboost hyperparameters
-            "XGBoost" : {
+            "xgboost" : {
                 'n_estimators':[100, 200],
                 'learning_rate':[0.01,0.1,0.2],
                 'max_depth':[2, 3, 5, 10]
